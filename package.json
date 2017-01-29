@@ -1,5 +1,5 @@
 {
-  "name": "pricepeg",
+  "name": "syscoin-price-peg-server",
   "version": "1.3.0",
   "description": "Maintains SYS price peg against a variety of currencies",
   "main": "dist/server.js",
