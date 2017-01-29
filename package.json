@@ -7,7 +7,7 @@
     "build": "rm -rf dist && tsc && cp -R ./src/static/ ./dist/static/",
     "test": "mocha ./dist/test",
     "start": "node dist/server $CONFIG",
-    "startd": "pm2 start node dist/server $CONFIG -i 0 --name \"syscoin-price-peg-server\""
+    "startd": "pm2 start node dist/server $CONFIG --name \"syscoin-price-peg-server\""
   },
   "repository": {
     "type": "git",
