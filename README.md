@@ -6,12 +6,19 @@ The Syscoin Price Peg Server is a NodeJS server application for maintaining a  S
 ## How it Works
 The peg server uses data from multiple sources to derives the necessary values to convert values between various currencies. Fixer.io is used for all fiat currency conversion information, Coinbase is used for all BTC/USD conversion information, and a mix of Poloniex and Bittrex are used for all other blockchain currency information. The server watches each configured currency pair independently and when any one currency exchange rate moves outside the configured threshold the updated values are writted to the peg-alias on the Syscoin blockchain.
 
-## Installation and Setup
+## Installation and Setup (Ubuntu Linux)
 Syscoin Price Peg Server installation requires [NPM and Node](https://nodejs.org/en/download/) 7+. 
 
-1. If installing from source first clone the repository using `git clone https://github.com/syscoin/pricepeg.git`. Alternatively you can also install directly from NPM using `npm install syscoin-price-peg-server`.
+**Note:** Prior to setup make sure you have the latest versions of the required dependencies using the commands:
+
+* NodeJS/NPM: 
+	* `curl -sL https://deb.nodesource.com/setup_7.x | sudo -E bash -`
+	* `sudo apt-get install -y nodejs`
+
+1. Download the Syscoin Price Peg server code using `npm install syscoin-price-peg-server`. Alternatively you can also install directly from NPM using `npm install syscoin-price-peg-server`.
+2. This guide assumes you have already installed the latest Syscoin wallet and created a Syscoin.conf file with the required parameters to enable its JSONRPC server functionality.
 2. The server comes with a default config.ini file which controls all aspects of the server, including which currencies it supports. For more information please refer to the [configuration section]().
-3. Update the configuration file to reflect the Alias you with to use as a peg and the currencies you wish to support. **You MUST create the peg alias on the Syscoin network with a public value of `{"rates":[]}` BEFORE attempting to run Price Peg Server to manage it!**
+3. Update the configuration file to reflect the Alias you with to use as a peg and the currencies you wish to support. **You MUST create the peg alias on the Syscoin network with a public value of `{"rates":[]}` BEFORE attempting to run Price Peg Server to manage it!** The wallet responsible for maintaining the peg Alias must also have a minimal balance to support transaction fees associated with the `aliasupdate` operation (*50-100 SYS per year recommended*).
 
 ## Supported Currencies
 The full list of supported currencies can be found in [`src/common.ts: supportedCurrencies`](https://github.com/syscoin/pricepeg/blob/dev_1.3/src/common.ts#L74) or in the [table at the bottom of this page](#full-supported-currencies-list).
