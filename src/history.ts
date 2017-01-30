@@ -30,7 +30,7 @@ export const getHistoryPage = (req, res, peg: PricePeg) => {
     </head><body class="container" style="padding: 10px"> 
      
     <div class="jumbotron"> 
-    <div style="text-align:center"><img src="" width="200" height="200" style="" /></div>
+    <div style="text-align:center"><img src="Syscoin_Icon.png" width="200" height="200" style="" /></div>
     <p style="font-size:18px; text-align: center">
     The Syscoin Team price peg uses the "${config.pegalias}" alias on the Syscoin blockchain and is the default price peg for all items being sold on the 
     Syscoin Decentralized Marketplace. The price peg uses averages rates from Bittrex and Poloniex for each supported cryptocurrency, USD/BTC rates from Coinbase, and USD/Fiat rates from <a href="http://fixer.io">Fixer.io.</a> <br><br>
