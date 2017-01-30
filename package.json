@@ -1,6 +1,6 @@
 {
   "name": "syscoin-price-peg-server",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "description": "Server that monitors Syscoin exchange rate prices across a variety of highly-configurable currencies and updates the configured peg-alias anytime rates fluctuate outside a given range. Highly configurable.",
   "main": "dist/server.js",
   "scripts": {

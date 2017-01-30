@@ -9,16 +9,18 @@ The peg server uses data from multiple sources to derives the necessary values t
 ## Installation and Setup (Ubuntu Linux)
 Syscoin Price Peg Server installation requires [NPM and Node](https://nodejs.org/en/download/) 7+. 
 
-**Note:** Prior to setup make sure you have the latest versions of the required dependencies using the commands:
+**Note:** Prior to setup make sure you have the latest versions of the required tools using the commands:
 
-* NodeJS/NPM: 
+* GIT: `sudo apt-get install git` 
+* NodeJS/NPM 
 	* `curl -sL https://deb.nodesource.com/setup_7.x | sudo -E bash -`
 	* `sudo apt-get install -y nodejs`
 
-1. Download the Syscoin Price Peg server code using `npm install syscoin-price-peg-server`. Alternatively you can also install directly from NPM using `npm install syscoin-price-peg-server`.
-2. This guide assumes you have already installed the latest Syscoin wallet and created a Syscoin.conf file with the required parameters to enable its JSONRPC server functionality.
-2. The server comes with a default config.ini file which controls all aspects of the server, including which currencies it supports. For more information please refer to the [configuration section]().
-3. Update the configuration file to reflect the Alias you with to use as a peg and the currencies you wish to support. **You MUST create the peg alias on the Syscoin network with a public value of `{"rates":[]}` BEFORE attempting to run Price Peg Server to manage it!** The wallet responsible for maintaining the peg Alias must also have a minimal balance to support transaction fees associated with the `aliasupdate` operation (*50-100 SYS per year recommended*).
+1. If installing from source first clone the repository using `git clone https://github.com/syscoin/pricepeg.git`.
+2. Install the required dependencies using `npm install`.
+3. This guide assumes you have already installed the latest Syscoin wallet and created a Syscoin.conf file with the required parameters to enable its JSONRPC server functionality.
+4. The server comes with a default config.ini file which controls all aspects of the server, including which currencies it supports. For more information please refer to the [configuration section]().
+5. Update the configuration file to reflect the Alias you with to use as a peg and the currencies you wish to support. **You MUST create the peg alias on the Syscoin network with a public value of `{"rates":[]}` BEFORE attempting to run Price Peg Server to manage it!** The wallet responsible for maintaining the peg Alias must also have a minimal balance to support transaction fees associated with the `aliasupdate` operation (*50-100 SYS per year recommended*).
 
 ## Supported Currencies
 The full list of supported currencies can be found in [`src/common.ts: supportedCurrencies`](https://github.com/syscoin/pricepeg/blob/dev_1.3/src/common.ts#L74) or in the [table at the bottom of this page](#full-supported-currencies-list).
@@ -27,9 +29,9 @@ The full list of supported currencies can be found in [`src/common.ts: supported
 The Price Peg Server must be run as a daemon. There are two optons for this:
 
 * **(Recommended)** Install [pm2](https://www.npmjs.com/package/pm2) for better running and monitoring of the server in daemon mode.
-	1.	Install [pm2](https://www.npmjs.com/package/pm2) globall using `npm install -g pm2`.
+	1.	Install [pm2](https://www.npmjs.com/package/pm2) globall using `sudo npm install -g pm2`.
 	2. Ensure pm2 is updated- `pm2 update`.
-	3. Run the server in daemon mode using `npm run startd`.
+	3. Change to the Syscoin Price Peg Server directory using `cd pricepeg`. Run the server in daemon mode using `npm run startd`.
 	4. (Optional) You can now use pm2's tooling for insights on how many resources the Peg Server is using and even launch it in multiprocess or clustered mode.
 * If you use the [screen](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-screen-on-an-ubuntu-cloud-server) application you can start the server by simply running `screen npm run start`. *Make sure to detach from the screen without terminating it!*
 
