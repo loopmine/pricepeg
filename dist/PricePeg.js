@@ -7,23 +7,15 @@ var Q = require("q");
 var common_1 = require("./common");
 var ConversionDataSource_1 = require("./data/ConversionDataSource");
 var PoloniexDataSource_1 = require("./data/PoloniexDataSource");
-var config_1 = require("./config");
 var syscoin = require('syscoin');
-var config = config_1.getConfig();
-var client = new syscoin.Client({
-    host: config.rpcserver,
-    port: config.rpcport,
-    user: config.rpcuser,
-    pass: config.rpcpassword,
-    timeout: config.rpctimeout
-});
 exports.conversionKeys = {
     BTCUSD: CurrencyConversion_1.CurrencyConversionType.CRYPTO.BTC.symbol + CurrencyConversion_1.CurrencyConversionType.FIAT.USD.symbol,
     SYSBTC: CurrencyConversion_1.CurrencyConversionType.CRYPTO.SYS.symbol + CurrencyConversion_1.CurrencyConversionType.CRYPTO.BTC.symbol
 };
 var PricePeg = (function () {
-    function PricePeg(configuredDataProvider) {
+    function PricePeg(config, configuredDataProvider) {
         var _this = this;
+        this.config = config;
         this.configuredDataProvider = configuredDataProvider;
         this.startTime = null;
         this.updateHistory = [];
@@ -32,9 +24,9 @@ var PricePeg = (function () {
         this.fiatDataSource = new FixerFiatDataSource_1.default("USD", "US Dollar", "http://api.fixer.io/latest?base=USD"); //used to extrapolate other Fiat/SYS pairs off SYS/USD
         this.conversionDataSources = [];
         this.start = function () {
-            Utils_1.logPegMessage("Starting PricePeg with config:\n                    " + JSON.stringify(config));
-            if (config.enableLivePegUpdates)
-                client.getInfo(function (err, info, resHeaders) {
+            Utils_1.logPegMessage("Starting PricePeg with config:\n                    " + JSON.stringify(_this.config));
+            if (_this.config.enableLivePegUpdates)
+                _this.client.getInfo(function (err, info, resHeaders) {
                     if (err) {
                         return Utils_1.logPegMessage("Error: " + err);
                     }
@@ -45,12 +37,12 @@ var PricePeg = (function () {
             _this.loadUpdateHistory().then(function (log) {
                 var parseLog = JSON.parse(log);
                 if (Utils_1.validateUpdateHistoryLogFormat(parseLog)) {
-                    if (config.logLevel.logUpdateLoggingEvents)
+                    if (_this.config.logLevel.logUpdateLoggingEvents)
                         Utils_1.logPegMessage("Peg update history loaded from file and validated.");
                     _this.updateHistory = parseLog;
                 }
                 else {
-                    if (config.logLevel.logUpdateLoggingEvents)
+                    if (_this.config.logLevel.logUpdateLoggingEvents)
                         Utils_1.logPegMessage("Peg update history loaded from file but was INVALID!");
                 }
                 _this.startUpdateInterval();
@@ -63,17 +55,17 @@ var PricePeg = (function () {
         };
         this.startUpdateInterval = function () {
             _this.fiatDataSource.fetchCurrencyConversionData().then(function (result) {
-                if (!config.enablePegUpdateDebug) {
+                if (!_this.config.enablePegUpdateDebug) {
                     _this.refreshCurrentRates(true);
                     _this.updateInterval = setInterval(function () {
                         _this.refreshCurrentRates(true);
-                    }, config.updateInterval * 1000);
+                    }, _this.config.updateInterval * 1000);
                 }
                 else {
                     _this.checkPricePeg();
                     _this.updateInterval = setInterval(function () {
                         _this.checkPricePeg();
-                    }, config.debugPegUpdateInterval * 1000);
+                    }, _this.config.debugPegUpdateInterval * 1000);
                 }
             });
         };
@@ -90,7 +82,7 @@ var PricePeg = (function () {
             });
         };
         this.handleCurrentRateRefreshComplete = function (checkForPegUpdate) {
-            if (config.logLevel.logNetworkEvents) {
+            if (_this.config.logLevel.logNetworkEvents) {
                 //any time we fetch crypto rates, fetch the fiat rates too
                 Utils_1.logPegMessage("Exchange rate refresh complete, check for peg value changes == " + checkForPegUpdate);
                 Utils_1.logPegMessageNewline();
@@ -101,7 +93,7 @@ var PricePeg = (function () {
         };
         this.loadUpdateHistory = function () {
             var deferred = Q.defer();
-            Utils_1.readFromFile(config.updateLogFilename).then(function (log) {
+            Utils_1.readFromFile(_this.config.updateLogFilename).then(function (log) {
                 deferred.resolve(log);
             }, function (e) { return deferred.reject(e); });
             return deferred.promise;
@@ -118,17 +110,17 @@ var PricePeg = (function () {
         this.checkPricePeg = function () {
             var deferred = Q.defer();
             _this.getPricePeg().then(function (currentValue) {
-                if (config.logLevel.logPriceCheckEvents)
+                if (_this.config.logLevel.logPriceCheckEvents)
                     Utils_1.logPegMessage("Current peg value: " + JSON.stringify(currentValue));
                 if (_this.sysRates == null) {
-                    if (config.logLevel.logPriceCheckEvents)
+                    if (_this.config.logLevel.logPriceCheckEvents)
                         Utils_1.logPegMessage("No current value set, setting, setting first result as current value.");
                     _this.sysRates = currentValue;
                 }
-                if (config.logLevel.logPriceCheckEvents)
+                if (_this.config.logLevel.logPriceCheckEvents)
                     Utils_1.logPegMessageNewline();
                 var newValue = _this.convertToPricePeg();
-                if (config.enablePegUpdateDebug) {
+                if (_this.config.enablePegUpdateDebug) {
                     _this.setPricePeg(newValue, currentValue);
                 }
                 else {
@@ -144,13 +136,13 @@ var PricePeg = (function () {
                                     throw new Error("No such rate: " + currencyKey);
                                 }
                                 var percentChange = Utils_1.getPercentChange(newConversionRate, currentConversionRate);
-                                if (config.logLevel.logPriceCheckEvents) {
+                                if (_this.config.logLevel.logPriceCheckEvents) {
                                     Utils_1.logPegMessage("Checking price for " + currencyKey + ": Current v. new = " + currentConversionRate + "  v. " + newConversionRate + " == " + percentChange + "% change");
                                 }
                                 percentChange = percentChange < 0 ? percentChange * -1 : percentChange; //convert neg percent to positive
                                 //if the price for any single currency as moved outside of the config'd range or the rate doesn't yet exist, update the peg.
-                                if (percentChange > (config.updateThresholdPercentage * 100)) {
-                                    if (config.logLevel.logBlockchainEvents)
+                                if (percentChange > (_this.config.updateThresholdPercentage * 100)) {
+                                    if (_this.config.logLevel.logBlockchainEvents)
                                         Utils_1.logPegMessage("Attempting to update price peg, currency " + currencyKey + " changed by " + percentChange + ".");
                                     _this.setPricePeg(newValue, currentValue).then(function (result) {
                                         deferred.resolve(result);
@@ -162,7 +154,7 @@ var PricePeg = (function () {
                             }
                             catch (e) {
                                 if (!rateExists) {
-                                    if (config.logLevel.logBlockchainEvents)
+                                    if (_this.config.logLevel.logBlockchainEvents)
                                         Utils_1.logPegMessage("Attempting to update price peg because new rate set doesn't match current");
                                     //find the new entries and update them
                                     for (var i = 0; i < newValue.rates.length; i++) {
@@ -187,11 +179,11 @@ var PricePeg = (function () {
         };
         this.getPricePeg = function () {
             var deferred = Q.defer();
-            if (!config.enableLivePegUpdates) {
+            if (!_this.config.enableLivePegUpdates) {
                 deferred.resolve(common_1.mockPeg);
             }
             else {
-                client.aliasInfo(config.pegalias, function (err, aliasinfo, resHeaders) {
+                _this.client.aliasInfo(_this.config.pegalias, function (err, aliasinfo, resHeaders) {
                     if (err) {
                         Utils_1.logPegMessage("Error: " + err);
                         return deferred.reject(err);
@@ -206,18 +198,18 @@ var PricePeg = (function () {
             //guard against updating the peg too rapidly
             var now = Date.now();
             var currentInterval = (1000 * 60 * 60 * 24) + (now - _this.startTime);
-            currentInterval = (currentInterval / (config.updatePeriod * 1000)) % 1; //get remainder of unfinished interval
+            currentInterval = (currentInterval / (_this.config.updatePeriod * 1000)) % 1; //get remainder of unfinished interval
             //see how many updates have happened in this period
-            var currentIntervalStartTime = now - ((config.updatePeriod * 1000) * currentInterval);
+            var currentIntervalStartTime = now - ((_this.config.updatePeriod * 1000) * currentInterval);
             var updatesInThisPeriod = 0;
-            if (config.logLevel.logBlockchainEvents)
+            if (_this.config.logLevel.logBlockchainEvents)
                 Utils_1.logPegMessage("Attempting to update price peg if within safe parameters.");
             updatesInThisPeriod += _this.updateHistory.filter(function (item) {
                 return item.date > currentIntervalStartTime;
             }).length;
-            if (updatesInThisPeriod <= config.maxUpdatesPerPeriod) {
-                if (config.enableLivePegUpdates) {
-                    client.aliasUpdate(config.pegalias, config.pegalias_aliaspeg, JSON.stringify(newValue), function (err, result, resHeaders) {
+            if (updatesInThisPeriod <= _this.config.maxUpdatesPerPeriod) {
+                if (_this.config.enableLivePegUpdates) {
+                    _this.client.aliasUpdate(_this.config.pegalias, _this.config.pegalias_aliaspeg, JSON.stringify(newValue), function (err, result, resHeaders) {
                         if (err) {
                             Utils_1.logPegMessage("ERROR: " + err);
                             Utils_1.logPegMessageNewline();
@@ -235,7 +227,7 @@ var PricePeg = (function () {
                 }
             }
             else {
-                Utils_1.logPegMessage("ERROR - Unable to update peg, max updates of [" + config.maxUpdatesPerPeriod + "] would be exceeded. Not updating peg.");
+                Utils_1.logPegMessage("ERROR - Unable to update peg, max updates of [" + _this.config.maxUpdatesPerPeriod + "] would be exceeded. Not updating peg.");
                 Utils_1.logPegMessageNewline();
                 deferred.reject(null);
             }
@@ -248,12 +240,12 @@ var PricePeg = (function () {
                 value: oldValue
             });
             //write updated history object to file
-            Utils_1.writeToFile(config.updateLogFilename, JSON.stringify(_this.updateHistory), false).then(function (result) {
-                if (config.logLevel.logUpdateLoggingEvents)
+            Utils_1.writeToFile(_this.config.updateLogFilename, JSON.stringify(_this.updateHistory), false).then(function (result) {
+                if (_this.config.logLevel.logUpdateLoggingEvents)
                     Utils_1.logPegMessage("Update log history written to successfully");
             });
             _this.sysRates = newValue;
-            if (config.logLevel.logBlockchainEvents) {
+            if (_this.config.logLevel.logBlockchainEvents) {
                 Utils_1.logPegMessage("Price peg updated successfully.");
                 Utils_1.logPegMessageNewline();
             }
@@ -272,6 +264,13 @@ var PricePeg = (function () {
         if (!config.enableLivePegUpdates) {
             this.fiatDataSource.formattedCurrencyConversionData = common_1.mockPeg;
         }
+        this.client = new syscoin.Client({
+            host: config.rpcserver,
+            port: config.rpcport,
+            user: config.rpcuser,
+            pass: config.rpcpassword,
+            timeout: config.rpctimeout
+        });
         //setup conversions for currencies this peg will support
         //CryptoConverter should only be used for exchanges which there is a direct API for, anything
         //further conversions should happen in subclasses or this class

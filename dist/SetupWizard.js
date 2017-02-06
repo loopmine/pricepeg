@@ -57,14 +57,14 @@ var SetupWizard = (function () {
             return config;
         };
         this.parseConfig = function (config, setupPromise) {
-            Utils_1.logPegMessage("Parsing config.");
+            Utils_1.logPegMessage("Parsing config." + JSON.stringify(config));
             //prevent changes to version thru config
             config.version = config_1.defaultConfig.version;
             config_1.setConfig(config);
             config = config_1.getConfig();
             if (_this.validateCurrencyConfig(config)) {
                 Utils_1.logPegMessage("VALID CONFIG.");
-                setupPromise.resolve(_this.generatePegDataSourceObject(config));
+                setupPromise.resolve({ config: config, converters: _this.generatePegDataSourceObject(config) });
             }
             else {
                 Utils_1.logPegMessage("INVALID CONFIG." + JSON.stringify(config));
