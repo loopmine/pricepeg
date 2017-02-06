@@ -4,6 +4,7 @@ import SetupWizard from "./SetupWizard";
 import CryptoConverter from "./data/CryptoConverter";
 import {logPegMessage} from "./data/Utils";
 import {defaultConfig, setConfig, getConfig} from "./config";
+import {PegConfig, ConfiguredPeg} from "./common";
 
 
 //init the default config object
@@ -28,9 +29,10 @@ let express = require('express'),
 let config = getConfig();
 
 let setupWizard = new SetupWizard();
-setupWizard.setup("./config.ini", configOverride).then((configData: CryptoConverter[]) => {
+setupWizard.setup("./config.ini", configOverride).then((configData: ConfiguredPeg) => {
+  setConfig(configData.config);
   logPegMessage("TRY TO START PEG.");
-  let peg = new PricePeg(configData);
+  let peg = new PricePeg(getConfig(), configData.converters);
   peg.start();
 
   let PORT = config.httpport;

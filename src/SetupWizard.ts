@@ -1,21 +1,22 @@
 import * as Q from "q";
 import * as ini from "ini";
 import {readFromFile, getCurrencyData, logPegMessage, copyFields} from "./data/Utils";
-import {CurrencyData, supportedCurrencies, PegConfig, CurrencyConfig, DATA_SOURCE} from "./common";
+import {CurrencyData, supportedCurrencies, PegConfig, CurrencyConfig, DATA_SOURCE, ConfiguredPeg} from "./common";
 import CurrencyConversion, {CurrencyConversionType} from "./data/CurrencyConversion";
 import CryptoConverter from "./data/CryptoConverter";
 import ConversionDataSource from "./data/ConversionDataSource";
 import BaseConversionDataSource from "./data/BaseConversionDataSource";
 import PoloniexDataSource from "./data/PoloniexDataSource";
 import {defaultConfig, setConfig, getConfig} from "./config";
+import PricePeg from "./PricePeg";
 
 export default class SetupWizard {
   constructor() {
 
   };
 
-  public setup = (configJsonFilePath: string, configOverride: PegConfig = null) => {
-    let deferred = Q.defer();
+  public setup = (configJsonFilePath: string, configOverride: PegConfig = null): Q.IPromise<ConfiguredPeg> => {
+    let deferred: Q.Deferred<ConfiguredPeg> = Q.defer() as Q.Deferred<ConfiguredPeg>;
 
     if (!configOverride) {
       logPegMessage("Reading config from file: " + configJsonFilePath);
@@ -68,8 +69,8 @@ export default class SetupWizard {
     return config;
   };
 
-  private parseConfig = (config: PegConfig, setupPromise: Q.Deferred<any>) => {
-    logPegMessage("Parsing config.");
+  private parseConfig = (config: PegConfig, setupPromise: Q.Deferred<ConfiguredPeg>) => {
+    logPegMessage("Parsing config." + JSON.stringify(config));
 
     //prevent changes to version thru config
     config.version = defaultConfig.version;
@@ -78,7 +79,7 @@ export default class SetupWizard {
 
     if (this.validateCurrencyConfig(config)) {
       logPegMessage("VALID CONFIG.");
-      setupPromise.resolve(this.generatePegDataSourceObject(config));
+      setupPromise.resolve({ config: config, converters: this.generatePegDataSourceObject(config)});
     } else {
       logPegMessage("INVALID CONFIG." + JSON.stringify(config));
       setupPromise.reject("INVALID CONFIG.")

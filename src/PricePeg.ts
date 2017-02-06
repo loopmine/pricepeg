@@ -10,22 +10,12 @@ import FixerFiatDataSource from "./data/FixerFiatDataSource";
 import {CurrencyConversionType, default as CurrencyConversion} from "./data/CurrencyConversion";
 import CryptoConverter from "./data/CryptoConverter";
 import * as Q from "q";
-import {PricePegModel, HistoryLog, mockPeg} from "./common";
+import {PricePegModel, HistoryLog, mockPeg, PegConfig} from "./common";
 import ConversionDataSource from "./data/ConversionDataSource";
 import PoloniexDataSource from "./data/PoloniexDataSource";
 import {getConfig} from "./config";
 
 const syscoin = require('syscoin');
-const config = getConfig();
-
-const client = new syscoin.Client({
-  host: config.rpcserver,
-  port: config.rpcport,
-  user: config.rpcuser,
-  pass: config.rpcpassword,
-  timeout: config.rpctimeout
-});
-
 
 interface ConverterCollection {
   [ key: string ]: CryptoConverter;
@@ -45,10 +35,20 @@ export default class PricePeg {
   private fiatDataSource = new FixerFiatDataSource("USD", "US Dollar", "http://api.fixer.io/latest?base=USD"); //used to extrapolate other Fiat/SYS pairs off SYS/USD
   private conversionDataSources: CryptoConverter[] = [];
 
-  constructor(public configuredDataProvider: CryptoConverter[]) {
+  private client;
+
+  constructor(public config: PegConfig, public configuredDataProvider: CryptoConverter[]) {
     if (!config.enableLivePegUpdates) {
       this.fiatDataSource.formattedCurrencyConversionData = mockPeg;
     }
+
+    this.client = new syscoin.Client({
+      host: config.rpcserver,
+      port: config.rpcport,
+      user: config.rpcuser,
+      pass: config.rpcpassword,
+      timeout: config.rpctimeout
+    });
 
     //setup conversions for currencies this peg will support
     //CryptoConverter should only be used for exchanges which there is a direct API for, anything
@@ -85,10 +85,10 @@ export default class PricePeg {
 
   start = () => {
     logPegMessage(`Starting PricePeg with config:
-                    ${JSON.stringify(config)}`);
+                    ${JSON.stringify(this.config)}`);
 
-    if (config.enableLivePegUpdates)
-      client.getInfo((err, info, resHeaders) => {
+    if (this.config.enableLivePegUpdates)
+      this.client.getInfo((err, info, resHeaders) => {
         if (err) {
           return logPegMessage(`Error: ${err}`);
         }
@@ -102,11 +102,11 @@ export default class PricePeg {
     this.loadUpdateHistory().then((log) => {
       let parseLog = JSON.parse(log);
       if(validateUpdateHistoryLogFormat(parseLog)) {
-        if(config.logLevel.logUpdateLoggingEvents)
+        if(this.config.logLevel.logUpdateLoggingEvents)
           logPegMessage("Peg update history loaded from file and validated.");
         this.updateHistory = parseLog;
       }else{
-        if(config.logLevel.logUpdateLoggingEvents)
+        if(this.config.logLevel.logUpdateLoggingEvents)
           logPegMessage("Peg update history loaded from file but was INVALID!")
       }
 
@@ -123,18 +123,18 @@ export default class PricePeg {
 
   startUpdateInterval = () => {
     this.fiatDataSource.fetchCurrencyConversionData().then((result) => {
-      if (!config.enablePegUpdateDebug) {
+      if (!this.config.enablePegUpdateDebug) {
         this.refreshCurrentRates(true);
 
         this.updateInterval = setInterval(() => {
           this.refreshCurrentRates(true)
-        }, config.updateInterval * 1000);
+        }, this.config.updateInterval * 1000);
       } else {
         this.checkPricePeg();
 
         this.updateInterval = setInterval(() => {
           this.checkPricePeg();
-        }, config.debugPegUpdateInterval * 1000);
+        }, this.config.debugPegUpdateInterval * 1000);
       }
     });
   };
@@ -156,7 +156,7 @@ export default class PricePeg {
   };
 
   handleCurrentRateRefreshComplete = (checkForPegUpdate) => {
-    if (config.logLevel.logNetworkEvents) {
+    if (this.config.logLevel.logNetworkEvents) {
       //any time we fetch crypto rates, fetch the fiat rates too
       logPegMessage(`Exchange rate refresh complete, check for peg value changes == ${checkForPegUpdate}`);
       logPegMessageNewline();
@@ -169,7 +169,7 @@ export default class PricePeg {
 
   loadUpdateHistory = (): Q.IPromise<string>  => {
     let deferred = Q.defer();
-    readFromFile(config.updateLogFilename).then((log: string) => {
+    readFromFile(this.config.updateLogFilename).then((log: string) => {
       deferred.resolve(log);
     }, (e) => deferred.reject(e));
 
@@ -193,22 +193,22 @@ export default class PricePeg {
     let deferred = Q.defer();
 
     this.getPricePeg().then((currentValue: PricePegModel) => {
-      if (config.logLevel.logPriceCheckEvents)
+      if (this.config.logLevel.logPriceCheckEvents)
         logPegMessage(`Current peg value: ${JSON.stringify(currentValue)}`);
 
       if (this.sysRates == null) {
-        if (config.logLevel.logPriceCheckEvents)
+        if (this.config.logLevel.logPriceCheckEvents)
           logPegMessage(`No current value set, setting, setting first result as current value.`);
 
         this.sysRates = currentValue;
       }
 
-      if (config.logLevel.logPriceCheckEvents)
+      if (this.config.logLevel.logPriceCheckEvents)
         logPegMessageNewline();
 
       let newValue = this.convertToPricePeg();
 
-      if (config.enablePegUpdateDebug) {
+      if (this.config.enablePegUpdateDebug) {
         this.setPricePeg(newValue, currentValue);
       } else {
         for(let key in this.conversionDataSources) {
@@ -226,15 +226,15 @@ export default class PricePeg {
 
               let percentChange = getPercentChange(newConversionRate, currentConversionRate);
 
-              if (config.logLevel.logPriceCheckEvents) {
+              if (this.config.logLevel.logPriceCheckEvents) {
                 logPegMessage(`Checking price for ${currencyKey}: Current v. new = ${currentConversionRate}  v. ${newConversionRate} == ${percentChange}% change`);
               }
 
               percentChange = percentChange < 0 ? percentChange * -1 : percentChange; //convert neg percent to positive
 
               //if the price for any single currency as moved outside of the config'd range or the rate doesn't yet exist, update the peg.
-              if (percentChange > (config.updateThresholdPercentage * 100)) {
-                if (config.logLevel.logBlockchainEvents)
+              if (percentChange > (this.config.updateThresholdPercentage * 100)) {
+                if (this.config.logLevel.logBlockchainEvents)
                   logPegMessage(`Attempting to update price peg, currency ${currencyKey} changed by ${percentChange}.`);
 
                 this.setPricePeg(newValue, currentValue).then((result) => {
@@ -245,7 +245,7 @@ export default class PricePeg {
               }
             }catch(e) {
               if(!rateExists) {
-                if (config.logLevel.logBlockchainEvents)
+                if (this.config.logLevel.logBlockchainEvents)
                   logPegMessage(`Attempting to update price peg because new rate set doesn't match current`);
 
                 //find the new entries and update them
@@ -277,10 +277,10 @@ export default class PricePeg {
   getPricePeg = () => {
     let deferred = Q.defer();
 
-    if (!config.enableLivePegUpdates) {
+    if (!this.config.enableLivePegUpdates) {
       deferred.resolve(mockPeg);
     } else {
-      client.aliasInfo(config.pegalias, (err, aliasinfo, resHeaders) => {
+      this.client.aliasInfo(this.config.pegalias, (err, aliasinfo, resHeaders) => {
         if (err) {
           logPegMessage(`Error: ${err}`);
           return deferred.reject(err);
@@ -299,22 +299,22 @@ export default class PricePeg {
     //guard against updating the peg too rapidly
     let now = Date.now();
     let currentInterval = (1000 * 60 * 60 * 24) + (now - this.startTime);
-    currentInterval = (currentInterval / (config.updatePeriod * 1000)) % 1; //get remainder of unfinished interval
+    currentInterval = (currentInterval / (this.config.updatePeriod * 1000)) % 1; //get remainder of unfinished interval
 
     //see how many updates have happened in this period
-    let currentIntervalStartTime = now - ((config.updatePeriod * 1000) * currentInterval);
+    let currentIntervalStartTime = now - ((this.config.updatePeriod * 1000) * currentInterval);
 
     let updatesInThisPeriod = 0;
-    if (config.logLevel.logBlockchainEvents)
+    if (this.config.logLevel.logBlockchainEvents)
       logPegMessage(`Attempting to update price peg if within safe parameters.`);
 
     updatesInThisPeriod += this.updateHistory.filter((item) => {
       return item.date > currentIntervalStartTime;
     }).length;
 
-    if (updatesInThisPeriod <= config.maxUpdatesPerPeriod) {
-      if (config.enableLivePegUpdates) {
-        client.aliasUpdate(config.pegalias, config.pegalias_aliaspeg, JSON.stringify(newValue), (err, result, resHeaders) => {
+    if (updatesInThisPeriod <= this.config.maxUpdatesPerPeriod) {
+      if (this.config.enableLivePegUpdates) {
+        this.client.aliasUpdate(this.config.pegalias, this.config.pegalias_aliaspeg, JSON.stringify(newValue), (err, result, resHeaders) => {
           if (err) {
             logPegMessage(`ERROR: ${err}`);
             logPegMessageNewline();
@@ -329,7 +329,7 @@ export default class PricePeg {
         deferred.resolve(newValue);
       }
     } else {
-      logPegMessage(`ERROR - Unable to update peg, max updates of [${config.maxUpdatesPerPeriod}] would be exceeded. Not updating peg.`);
+      logPegMessage(`ERROR - Unable to update peg, max updates of [${this.config.maxUpdatesPerPeriod}] would be exceeded. Not updating peg.`);
       logPegMessageNewline();
       deferred.reject(null);
     }
@@ -345,14 +345,14 @@ export default class PricePeg {
     });
 
     //write updated history object to file
-    writeToFile(config.updateLogFilename, JSON.stringify(this.updateHistory), false).then((result) => {
-      if(config.logLevel.logUpdateLoggingEvents)
+    writeToFile(this.config.updateLogFilename, JSON.stringify(this.updateHistory), false).then((result) => {
+      if(this.config.logLevel.logUpdateLoggingEvents)
         logPegMessage("Update log history written to successfully");
     });
 
     this.sysRates = newValue;
 
-    if (config.logLevel.logBlockchainEvents) {
+    if (this.config.logLevel.logBlockchainEvents) {
       logPegMessage(`Price peg updated successfully.`);
       logPegMessageNewline();
     }

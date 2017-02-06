@@ -53,6 +53,17 @@ export const getConfig = (): PegConfig => {
 
 export const setConfig = (newConfig: PegConfig) => {
   copyFields(config, newConfig);
+
+  //run through and make sure all the types of new config are proper
+  config.debugPegUpdateIncrement = parseFloat(config.debugPegUpdateIncrement.toString());
+  config.debugPegUpdateInterval = parseFloat(config.debugPegUpdateInterval.toString());
+  config.maxUpdatesPerPeriod = parseInt(config.maxUpdatesPerPeriod.toString());
+  config.httpport = parseInt(config.httpport.toString());
+  config.rpcport = parseInt(config.rpcport.toString());
+  config.rpctimeout = parseInt(config.rpctimeout.toString());
+  config.updateThresholdPercentage = parseFloat(config.updateThresholdPercentage.toString());
+  config.updateInterval = parseInt(config.updateInterval.toString());
+  config.updatePeriod = parseInt(config.updatePeriod.toString());
 };
 
 

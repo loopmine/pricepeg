@@ -22,8 +22,9 @@ var express = require('express'), app = express(), server = require('http').crea
 var config = config_1.getConfig();
 var setupWizard = new SetupWizard_1.default();
 setupWizard.setup("./config.ini", configOverride).then(function (configData) {
+    config_1.setConfig(configData.config);
     Utils_1.logPegMessage("TRY TO START PEG.");
-    var peg = new PricePeg_1.default(configData);
+    var peg = new PricePeg_1.default(config_1.getConfig(), configData.converters);
     peg.start();
     var PORT = config.httpport;
     app.use('/', express.static(__dirname + '/static'));

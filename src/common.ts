@@ -1,5 +1,6 @@
 import {LogLevel} from "./config";
 import {CurrencyConversionType} from "./data/CurrencyConversion";
+import CryptoConverter from "./data/CryptoConverter";
 export interface PricePegModel {
   rates: PricePegEntry[];
 }
@@ -56,6 +57,11 @@ export interface CurrencyData {
   symbol: string;
   label: string;
   isFiat: boolean;
+}
+
+export interface ConfiguredPeg {
+  config: PegConfig;
+  converters: CryptoConverter[];
 }
 
 //holds mock peg data for sync testing
