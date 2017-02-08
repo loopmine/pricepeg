@@ -100,6 +100,7 @@ exports.CurrencyConversionType = {
         NXC: { symbol: "NXC", label: "NEXIUM", isFiat: false },
         NXT: { symbol: "NXT", label: "NXT", isFiat: false },
         OMNI: { symbol: "OMNI", label: "OMNI", isFiat: false },
+        PASC: { symbol: "PASC", label: "PASCALCOIN", isFiat: false },
         PINK: { symbol: "PINK", label: "PINKCOIN", isFiat: false },
         POT: { symbol: "POT", label: "POTCOIN", isFiat: false },
         PPC: { symbol: "PPC", label: "PEERCOIN", isFiat: false },

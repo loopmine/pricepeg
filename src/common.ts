@@ -160,6 +160,7 @@ export const supportedCurrencies: CurrencyData[] = [
   CurrencyConversionType.CRYPTO.NXC,
   CurrencyConversionType.CRYPTO.NXT,
   CurrencyConversionType.CRYPTO.OMNI,
+  CurrencyConversionType.CRYPTO.PASC,
   CurrencyConversionType.CRYPTO.PINK,
   CurrencyConversionType.CRYPTO.POT,
   CurrencyConversionType.CRYPTO.PPC,

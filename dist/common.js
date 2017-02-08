@@ -94,6 +94,7 @@ exports.supportedCurrencies = [
     CurrencyConversion_1.CurrencyConversionType.CRYPTO.NXC,
     CurrencyConversion_1.CurrencyConversionType.CRYPTO.NXT,
     CurrencyConversion_1.CurrencyConversionType.CRYPTO.OMNI,
+    CurrencyConversion_1.CurrencyConversionType.CRYPTO.PASC,
     CurrencyConversion_1.CurrencyConversionType.CRYPTO.PINK,
     CurrencyConversion_1.CurrencyConversionType.CRYPTO.POT,
     CurrencyConversion_1.CurrencyConversionType.CRYPTO.PPC,
