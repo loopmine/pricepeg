@@ -35,15 +35,20 @@ var PricePeg = (function () {
             _this.startTime = Date.now();
             //try to load up any previous data
             _this.loadUpdateHistory().then(function (log) {
-                var parseLog = JSON.parse(log);
-                if (Utils_1.validateUpdateHistoryLogFormat(parseLog)) {
-                    if (_this.config.logLevel.logUpdateLoggingEvents)
-                        Utils_1.logPegMessage("Peg update history loaded from file and validated.");
-                    _this.updateHistory = parseLog;
+                try {
+                    var parseLog = JSON.parse(log);
+                    if (Utils_1.validateUpdateHistoryLogFormat(parseLog)) {
+                        if (_this.config.logLevel.logUpdateLoggingEvents)
+                            Utils_1.logPegMessage("Peg update history loaded from file and validated.");
+                        _this.updateHistory = parseLog;
+                    }
+                    else {
+                        if (_this.config.logLevel.logUpdateLoggingEvents)
+                            Utils_1.logPegMessage("Peg update history loaded from file but was INVALID!");
+                    }
                 }
-                else {
-                    if (_this.config.logLevel.logUpdateLoggingEvents)
-                        Utils_1.logPegMessage("Peg update history loaded from file but was INVALID!");
+                catch (e) {
+                    Utils_1.logPegMessage("Error loading peg history:  " + JSON.stringify(e));
                 }
                 _this.startUpdateInterval();
             }, function (err) {
@@ -62,7 +67,7 @@ var PricePeg = (function () {
                     }, _this.config.updateInterval * 1000);
                 }
                 else {
-                    _this.checkPricePeg();
+                    _this.refreshCurrentRates(true);
                     _this.updateInterval = setInterval(function () {
                         _this.checkPricePeg();
                     }, _this.config.debugPegUpdateInterval * 1000);
@@ -95,7 +100,9 @@ var PricePeg = (function () {
             var deferred = Q.defer();
             Utils_1.readFromFile(_this.config.updateLogFilename).then(function (log) {
                 deferred.resolve(log);
-            }, function (e) { return deferred.reject(e); });
+            }).catch(function (e) {
+                deferred.reject(e);
+            });
             return deferred.promise;
         };
         this.getRate = function (ratesObject, searchSymbol) {

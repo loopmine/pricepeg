@@ -135,7 +135,7 @@ export default class PricePeg {
           this.refreshCurrentRates(true)
         }, this.config.updateInterval * 1000);
       } else {
-        this.checkPricePeg();
+        this.refreshCurrentRates(true);
 
         this.updateInterval = setInterval(() => {
           this.checkPricePeg();
