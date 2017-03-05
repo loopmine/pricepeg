@@ -57,7 +57,7 @@ export const writeToFile = (filePath: string, content: string, append: boolean =
   return deferred.promise;
 };
 
-export const readFromFile = (filePath: string): Q.IPromise<string> => {
+export const readFromFile = (filePath: string): Q.Promise<any> => {
   let deferred = Q.defer();
   fs.readFile(filePath, "utf-8", (err, data) => {
     if (err) {

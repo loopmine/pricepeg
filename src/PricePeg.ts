@@ -100,14 +100,19 @@ export default class PricePeg {
 
     //try to load up any previous data
     this.loadUpdateHistory().then((log) => {
-      let parseLog = JSON.parse(log);
-      if(validateUpdateHistoryLogFormat(parseLog)) {
-        if(this.config.logLevel.logUpdateLoggingEvents)
-          logPegMessage("Peg update history loaded from file and validated.");
-        this.updateHistory = parseLog;
-      }else{
-        if(this.config.logLevel.logUpdateLoggingEvents)
-          logPegMessage("Peg update history loaded from file but was INVALID!")
+      try {
+        let parseLog = JSON.parse(log);
+
+        if (validateUpdateHistoryLogFormat(parseLog)) {
+          if (this.config.logLevel.logUpdateLoggingEvents)
+            logPegMessage("Peg update history loaded from file and validated.");
+          this.updateHistory = parseLog;
+        } else {
+          if (this.config.logLevel.logUpdateLoggingEvents)
+            logPegMessage("Peg update history loaded from file but was INVALID!")
+        }
+      }catch(e) {
+        logPegMessage(`Error loading peg history:  ${JSON.stringify(e)}`);
       }
 
       this.startUpdateInterval();
@@ -167,12 +172,13 @@ export default class PricePeg {
     }
   };
 
-  loadUpdateHistory = (): Q.IPromise<string>  => {
+  loadUpdateHistory = (): Q.Promise<any>  => {
     let deferred = Q.defer();
     readFromFile(this.config.updateLogFilename).then((log: string) => {
       deferred.resolve(log);
-    }, (e) => deferred.reject(e));
-
+    }).catch((e) => {
+      deferred.reject(e);
+    });
 
     return deferred.promise;
   };
