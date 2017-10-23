@@ -1,10 +1,11 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var CurrencyConversion_1 = require("./CurrencyConversion");
 var Q = require("q");
 var Utils_1 = require("./Utils");
 var PricePeg_1 = require("../PricePeg");
 var config_1 = require("../config");
-var CryptoConverter = (function () {
+var CryptoConverter = /** @class */ (function () {
     function CryptoConverter(currencyConversion, dataSources, currencyConfig) {
         if (currencyConfig === void 0) { currencyConfig = null; }
         var _this = this;
@@ -109,6 +110,5 @@ var CryptoConverter = (function () {
     }
     return CryptoConverter;
 }());
-Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = CryptoConverter;
 //# sourceMappingURL=CryptoConverter.js.map

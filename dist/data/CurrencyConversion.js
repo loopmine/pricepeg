@@ -1,5 +1,6 @@
 "use strict";
-var CurrencyConversion = (function () {
+Object.defineProperty(exports, "__esModule", { value: true });
+var CurrencyConversion = /** @class */ (function () {
     function CurrencyConversion(fromCurrencySymbol, fromCurrencyLabel, fromCurrencyAmount, toCurrencySymbol, toCurrencyLabel, toCurrencyAmount) {
         this.fromCurrencySymbol = fromCurrencySymbol;
         this.fromCurrencyLabel = fromCurrencyLabel;
@@ -15,7 +16,6 @@ var CurrencyConversion = (function () {
     }
     return CurrencyConversion;
 }());
-Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = CurrencyConversion;
 exports.CurrencyConversionType = {
     FIAT: {

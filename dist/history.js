@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var CurrencyConversion_1 = require("./data/CurrencyConversion");
 var Utils_1 = require("./data/Utils");
 var config_1 = require("./config");
@@ -49,6 +50,5 @@ exports.formatAMPM = function (date) {
     var strTime = hours + ':' + minutes + ':' + seconds + ' ' + ampm;
     return strTime;
 };
-Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = exports.getHistoryPage;
 //# sourceMappingURL=history.js.map

@@ -1,9 +1,10 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var Utils_1 = require("./Utils");
 var rp = require("request-promise");
 var Q = require("q");
 var config_1 = require("../config");
-var BaseConversionDataSource = (function () {
+var BaseConversionDataSource = /** @class */ (function () {
     function BaseConversionDataSource(baseCurrencySymbol, baseCurrencyLabel, dataUrl, responseDataPath) {
         if (responseDataPath === void 0) { responseDataPath = null; }
         var _this = this;
@@ -50,6 +51,5 @@ var BaseConversionDataSource = (function () {
     }
     return BaseConversionDataSource;
 }());
-Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = BaseConversionDataSource;
 //# sourceMappingURL=BaseConversionDataSource.js.map

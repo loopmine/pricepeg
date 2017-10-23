@@ -15,7 +15,7 @@ import ConversionDataSource from "./data/ConversionDataSource";
 import PoloniexDataSource from "./data/PoloniexDataSource";
 import {getConfig} from "./config";
 
-const syscoin = require('syscoin');
+const SyscoinClient = require('syscoin-core');
 
 interface ConverterCollection {
   [ key: string ]: CryptoConverter;
@@ -36,17 +36,18 @@ export default class PricePeg {
   private conversionDataSources: CryptoConverter[] = [];
 
   private client;
+  private lastUpdateTxId: string = null;
 
   constructor(public config: PegConfig, public configuredDataProvider: CryptoConverter[]) {
     if (!config.enableLivePegUpdates) {
       this.fiatDataSource.formattedCurrencyConversionData = mockPeg;
     }
 
-    this.client = new syscoin.Client({
+    this.client = new SyscoinClient({
       host: config.rpcserver,
       port: config.rpcport,
-      user: config.rpcuser,
-      pass: config.rpcpassword,
+      username: config.rpcuser,
+      password: config.rpcpassword,
       timeout: config.rpctimeout
     });
 
@@ -217,6 +218,8 @@ export default class PricePeg {
       if (this.config.enablePegUpdateDebug) {
         this.setPricePeg(newValue, currentValue);
       } else {
+        let updatePeg = false;
+        let allRatesExist = true;
         for(let key in this.conversionDataSources) {
           if(this.conversionDataSources[key].currencyConfig != null) {
             let currencyKey: string = this.conversionDataSources[key].getPegCurrency();
@@ -240,33 +243,44 @@ export default class PricePeg {
 
               //if the price for any single currency as moved outside of the config'd range or the rate doesn't yet exist, update the peg.
               if (percentChange > (this.config.updateThresholdPercentage * 100)) {
+                updatePeg = true;
                 if (this.config.logLevel.logBlockchainEvents)
                   logPegMessage(`Attempting to update price peg, currency ${currencyKey} changed by ${percentChange}.`);
-
-                this.setPricePeg(newValue, currentValue).then((result) => {
-                  deferred.resolve(result);
-                });
+                break;
               } else {
                 deferred.resolve();
               }
             }catch(e) {
               if(!rateExists) {
+                updatePeg = true;
+                allRatesExist = false;
                 if (this.config.logLevel.logBlockchainEvents)
-                  logPegMessage(`Attempting to update price peg because new rate set doesn't match current`);
-
-                //find the new entries and update them
-                for(let i = 0; i < newValue.rates.length; i++)  {
-                  if(newValue.rates[i].rate == null || isNaN(newValue.rates[i].rate)) {
-                    newValue.rates[i].rate = 0;
-                  }
-                }
-
-                this.setPricePeg(newValue, currentValue).then((result) => {
-                  deferred.resolve(result);
-                });
+                  logPegMessage(`Attempting to update price peg because new rate OBJECT SHAPE doesn't match current`);
+                break;
               }
             }
           }
+        }
+
+        console.log("Update Peg:", updatePeg, " AllRates: ", allRatesExist);
+        if(updatePeg && allRatesExist) {
+          this.setPricePeg(newValue, currentValue).then((result) => {
+            deferred.resolve(result);
+          });
+        }else if(updatePeg && !allRatesExist) {
+          //find the new entries and update them
+          for(let i = 0; i < newValue.rates.length; i++)  {
+            if(newValue.rates[i].rate == null || isNaN(newValue.rates[i].rate)) {
+              newValue.rates[i].rate = 0;
+            }
+          }
+
+          this.setPricePeg(newValue, currentValue).then((result) => {
+            deferred.resolve(result);
+          });
+        }else{
+          const changeStr = this.config.updateThresholdPercentage * 100;
+          console.error("No change, price on any currency hasn't moved by +/- " + changeStr + " %");
         }
       }
 
@@ -302,6 +316,42 @@ export default class PricePeg {
   setPricePeg = (newValue, oldValue) => {
     let deferred = Q.defer();
 
+    //if the prev update hasn't been confirmed yet, don't even proceed with the logic
+    if(this.lastUpdateTxId != null) {
+      this.client.getTransaction(this.lastUpdateTxId, (err, result, resHeaders) => {
+        if (err) {
+          logPegMessage(`ERROR: ${err}`);
+          logPegMessageNewline();
+          deferred.reject(err);
+        } else {
+          if(this.config.logLevel.logBlockchainEvents)
+            logPegMessage(`Checking if tx ${this.lastUpdateTxId} has confirmations, it has ${result.confirmations} confirms`);
+
+          if(result.confirmations == 0) {
+            if(this.config.logLevel.logBlockchainEvents)
+              logPegMessage(`Previous update to peg has not yet been acccepted by blockchain, not updating peg.`);
+
+            deferred.reject("Previous update to peg has not yet been acccepted by blockchain.");
+          }else{
+            this.lastUpdateTxId = null; //last update has been processed, clear the id
+            this.doPegUpdate(oldValue, newValue).then((result) => {
+              deferred.resolve(result);
+            })
+          }
+        }
+      });
+    }else{
+      this.doPegUpdate(oldValue, newValue).then((result) => {
+        deferred.resolve(result);
+      });
+    }
+
+    return deferred.promise;
+  };
+
+  doPegUpdate = (oldValue, newValue) => {
+    let deferred = Q.defer();
+
     //guard against updating the peg too rapidly
     let now = Date.now();
     let currentInterval = (1000 * 60 * 60 * 24) + (now - this.startTime);
@@ -327,6 +377,7 @@ export default class PricePeg {
             deferred.reject(err);
           } else {
             this.logUpdate(newValue, oldValue); //always store the pre-update value so it makes sense when displayed
+            this.lastUpdateTxId = result[0];
             deferred.resolve(result);
           }
         });

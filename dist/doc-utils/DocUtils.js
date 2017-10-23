@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var Utils_1 = require("../data/Utils");
 exports.supportedCurrenciesToMarkdown = function (currencies) {
     var markdown = "";

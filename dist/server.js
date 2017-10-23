@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var PricePeg_1 = require("./PricePeg");
 var history_1 = require("./history");
 var SetupWizard_1 = require("./SetupWizard");

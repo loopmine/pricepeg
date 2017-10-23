@@ -18,7 +18,7 @@ export const defaultConfig: PegConfig = {
   currencies: [],
 
   maxUpdatesPerPeriod: 6, // maximum number of peg updates that will be allowed to occur in a single period
-  updatePeriod: 60 * 60 * 1, //defintion of the duration of a single period in seconds
+  updatePeriod: 60 * 60 * 1, //duration of a single update period in seconds
   updateThresholdPercentage: 0.01, //percentage at which an update is attempted, if value of peg fluctuates +/- this range
   updateInterval: 10, //time in second to check for price change updates
 
@@ -28,8 +28,8 @@ export const defaultConfig: PegConfig = {
   debugPegUpdateIncrement: 50, //debug mode, how much to increment USD conversion
 
   rpcserver: "localhost",
-  rpcuser: "username",
-  rpcpassword: "password",
+  rpcuser: "u",
+  rpcpassword: "p",
   rpcport: 8336,
   rpctimeout: 30000,
   pegalias: "pegtest1",
@@ -41,7 +41,7 @@ export const defaultConfig: PegConfig = {
   debugLogFilename: "peg.log",
   updateLogFilename: "peg-update-history.log",
 
-  version: "1.3.0"
+  version: "1.3.2"
 };
 
 let config = defaultConfig;

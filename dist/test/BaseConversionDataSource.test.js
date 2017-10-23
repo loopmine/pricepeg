@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var sinon = require("sinon");
 var when = require("when");
 var assert = require("assert");

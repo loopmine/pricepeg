@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var CurrencyConversion_1 = require("./data/CurrencyConversion");
 //holds mock peg data for sync testing
 exports.mockPeg = {

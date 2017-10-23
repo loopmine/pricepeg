@@ -1,5 +1,6 @@
 "use strict";
 var _this = this;
+Object.defineProperty(exports, "__esModule", { value: true });
 var fs = require("fs");
 var Q = require("q");
 var common_1 = require("../common");

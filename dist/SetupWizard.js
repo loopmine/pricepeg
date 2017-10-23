@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var Q = require("q");
 var ini = require("ini");
 var Utils_1 = require("./data/Utils");
@@ -8,7 +9,7 @@ var CryptoConverter_1 = require("./data/CryptoConverter");
 var ConversionDataSource_1 = require("./data/ConversionDataSource");
 var PoloniexDataSource_1 = require("./data/PoloniexDataSource");
 var config_1 = require("./config");
-var SetupWizard = (function () {
+var SetupWizard = /** @class */ (function () {
     function SetupWizard() {
         var _this = this;
         this.setup = function (configJsonFilePath, configOverride) {
@@ -186,6 +187,5 @@ var SetupWizard = (function () {
     ;
     return SetupWizard;
 }());
-Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = SetupWizard;
 //# sourceMappingURL=SetupWizard.js.map

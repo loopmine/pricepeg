@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var Utils_1 = require("./data/Utils");
 var FixerFiatDataSource_1 = require("./data/FixerFiatDataSource");
 var CurrencyConversion_1 = require("./data/CurrencyConversion");
@@ -7,12 +8,12 @@ var Q = require("q");
 var common_1 = require("./common");
 var ConversionDataSource_1 = require("./data/ConversionDataSource");
 var PoloniexDataSource_1 = require("./data/PoloniexDataSource");
-var syscoin = require('syscoin');
+var SyscoinClient = require('syscoin-core');
 exports.conversionKeys = {
     BTCUSD: CurrencyConversion_1.CurrencyConversionType.CRYPTO.BTC.symbol + CurrencyConversion_1.CurrencyConversionType.FIAT.USD.symbol,
     SYSBTC: CurrencyConversion_1.CurrencyConversionType.CRYPTO.SYS.symbol + CurrencyConversion_1.CurrencyConversionType.CRYPTO.BTC.symbol
 };
-var PricePeg = (function () {
+var PricePeg = /** @class */ (function () {
     function PricePeg(config, configuredDataProvider) {
         var _this = this;
         this.config = config;
@@ -23,6 +24,7 @@ var PricePeg = (function () {
         this.updateInterval = null;
         this.fiatDataSource = new FixerFiatDataSource_1.default("USD", "US Dollar", "http://api.fixer.io/latest?base=USD"); //used to extrapolate other Fiat/SYS pairs off SYS/USD
         this.conversionDataSources = [];
+        this.lastUpdateTxId = null;
         this.start = function () {
             Utils_1.logPegMessage("Starting PricePeg with config:\n                    " + JSON.stringify(_this.config));
             if (_this.config.enableLivePegUpdates)
@@ -131,6 +133,8 @@ var PricePeg = (function () {
                     _this.setPricePeg(newValue, currentValue);
                 }
                 else {
+                    var updatePeg = false;
+                    var allRatesExist = true;
                     for (var key in _this.conversionDataSources) {
                         if (_this.conversionDataSources[key].currencyConfig != null) {
                             var currencyKey = _this.conversionDataSources[key].getPegCurrency();
@@ -149,11 +153,10 @@ var PricePeg = (function () {
                                 percentChange = percentChange < 0 ? percentChange * -1 : percentChange; //convert neg percent to positive
                                 //if the price for any single currency as moved outside of the config'd range or the rate doesn't yet exist, update the peg.
                                 if (percentChange > (_this.config.updateThresholdPercentage * 100)) {
+                                    updatePeg = true;
                                     if (_this.config.logLevel.logBlockchainEvents)
                                         Utils_1.logPegMessage("Attempting to update price peg, currency " + currencyKey + " changed by " + percentChange + ".");
-                                    _this.setPricePeg(newValue, currentValue).then(function (result) {
-                                        deferred.resolve(result);
-                                    });
+                                    break;
                                 }
                                 else {
                                     deferred.resolve();
@@ -161,20 +164,35 @@ var PricePeg = (function () {
                             }
                             catch (e) {
                                 if (!rateExists) {
+                                    updatePeg = true;
+                                    allRatesExist = false;
                                     if (_this.config.logLevel.logBlockchainEvents)
-                                        Utils_1.logPegMessage("Attempting to update price peg because new rate set doesn't match current");
-                                    //find the new entries and update them
-                                    for (var i = 0; i < newValue.rates.length; i++) {
-                                        if (newValue.rates[i].rate == null || isNaN(newValue.rates[i].rate)) {
-                                            newValue.rates[i].rate = 0;
-                                        }
-                                    }
-                                    _this.setPricePeg(newValue, currentValue).then(function (result) {
-                                        deferred.resolve(result);
-                                    });
+                                        Utils_1.logPegMessage("Attempting to update price peg because new rate OBJECT SHAPE doesn't match current");
+                                    break;
                                 }
                             }
                         }
+                    }
+                    console.log("Update Peg:", updatePeg, " AllRates: ", allRatesExist);
+                    if (updatePeg && allRatesExist) {
+                        _this.setPricePeg(newValue, currentValue).then(function (result) {
+                            deferred.resolve(result);
+                        });
+                    }
+                    else if (updatePeg && !allRatesExist) {
+                        //find the new entries and update them
+                        for (var i = 0; i < newValue.rates.length; i++) {
+                            if (newValue.rates[i].rate == null || isNaN(newValue.rates[i].rate)) {
+                                newValue.rates[i].rate = 0;
+                            }
+                        }
+                        _this.setPricePeg(newValue, currentValue).then(function (result) {
+                            deferred.resolve(result);
+                        });
+                    }
+                    else {
+                        var changeStr = _this.config.updateThresholdPercentage * 100;
+                        console.error("No change, price on any currency hasn't moved by +/- " + changeStr + " %");
                     }
                 }
             })
@@ -202,6 +220,40 @@ var PricePeg = (function () {
         };
         this.setPricePeg = function (newValue, oldValue) {
             var deferred = Q.defer();
+            //if the prev update hasn't been confirmed yet, don't even proceed with the logic
+            if (_this.lastUpdateTxId != null) {
+                _this.client.getTransaction(_this.lastUpdateTxId, function (err, result, resHeaders) {
+                    if (err) {
+                        Utils_1.logPegMessage("ERROR: " + err);
+                        Utils_1.logPegMessageNewline();
+                        deferred.reject(err);
+                    }
+                    else {
+                        if (_this.config.logLevel.logBlockchainEvents)
+                            Utils_1.logPegMessage("Checking if tx " + _this.lastUpdateTxId + " has confirmations, it has " + result.confirmations + " confirms");
+                        if (result.confirmations == 0) {
+                            if (_this.config.logLevel.logBlockchainEvents)
+                                Utils_1.logPegMessage("Previous update to peg has not yet been acccepted by blockchain, not updating peg.");
+                            deferred.reject("Previous update to peg has not yet been acccepted by blockchain.");
+                        }
+                        else {
+                            _this.lastUpdateTxId = null; //last update has been processed, clear the id
+                            _this.doPegUpdate(oldValue, newValue).then(function (result) {
+                                deferred.resolve(result);
+                            });
+                        }
+                    }
+                });
+            }
+            else {
+                _this.doPegUpdate(oldValue, newValue).then(function (result) {
+                    deferred.resolve(result);
+                });
+            }
+            return deferred.promise;
+        };
+        this.doPegUpdate = function (oldValue, newValue) {
+            var deferred = Q.defer();
             //guard against updating the peg too rapidly
             var now = Date.now();
             var currentInterval = (1000 * 60 * 60 * 24) + (now - _this.startTime);
@@ -224,6 +276,7 @@ var PricePeg = (function () {
                         }
                         else {
                             _this.logUpdate(newValue, oldValue); //always store the pre-update value so it makes sense when displayed
+                            _this.lastUpdateTxId = result[0];
                             deferred.resolve(result);
                         }
                     });
@@ -271,11 +324,11 @@ var PricePeg = (function () {
         if (!config.enableLivePegUpdates) {
             this.fiatDataSource.formattedCurrencyConversionData = common_1.mockPeg;
         }
-        this.client = new syscoin.Client({
+        this.client = new SyscoinClient({
             host: config.rpcserver,
             port: config.rpcport,
-            user: config.rpcuser,
-            pass: config.rpcpassword,
+            username: config.rpcuser,
+            password: config.rpcpassword,
             timeout: config.rpctimeout
         });
         //setup conversions for currencies this peg will support
@@ -307,7 +360,6 @@ var PricePeg = (function () {
     }
     return PricePeg;
 }());
-Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = PricePeg;
 ;
 //# sourceMappingURL=PricePeg.js.map

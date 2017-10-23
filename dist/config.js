@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var Utils_1 = require("./data/Utils");
 var logLevel = {
     logNetworkEvents: false,
@@ -17,8 +18,8 @@ exports.defaultConfig = {
     debugPegUpdateInterval: 5,
     debugPegUpdateIncrement: 50,
     rpcserver: "localhost",
-    rpcuser: "username",
-    rpcpassword: "password",
+    rpcuser: "u",
+    rpcpassword: "p",
     rpcport: 8336,
     rpctimeout: 30000,
     pegalias: "pegtest1",
@@ -27,7 +28,7 @@ exports.defaultConfig = {
     logLevel: logLevel,
     debugLogFilename: "peg.log",
     updateLogFilename: "peg-update-history.log",
-    version: "1.3.0"
+    version: "1.3.2"
 };
 var config = exports.defaultConfig;
 //should always use the below functions for accessing config.
