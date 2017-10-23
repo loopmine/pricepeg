@@ -113,6 +113,7 @@ export const getPercentChange = (newRate, oldRate) => {
 };
 
 export const numberWithCommas = (x): string => {
+  x = parseFloat(x).toFixed(2);
   return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 };
 

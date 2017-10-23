@@ -96,6 +96,7 @@ exports.getPercentChange = function (newRate, oldRate) {
     return 0;
 };
 exports.numberWithCommas = function (x) {
+    x = parseFloat(x).toFixed(2);
     return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 };
 exports.copyFields = function (target, source) {

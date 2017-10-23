@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/syscoin/pricepeg#readme",
   "dependencies": {
+    "bootpag": "^1.0.7",
     "del": "^2.2.0",
     "express": "^4.13.4",
     "fs": "0.0.2",
