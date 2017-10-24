@@ -1,4 +1,4 @@
-//NOTE: intentionally cheatings on the TS here, this was intended to be light
+//NOTE: intentionally cheating on the TS here, this was intended to be light
 let Highcharts: any;
 
 let pageSize = (<any>window).pageSize;
