@@ -50,6 +50,7 @@ export const getHistoryPage = (req, res, peg: PricePeg) => {
         window.pageSize = ${pageSize};
         window.maxPages = ${maxPages};
         window.updateHistory = ${JSON.stringify(peg.updateHistory)};
+        window.currentRate = ${JSON.stringify(peg.sysRates)};
       </script>
       <script src="/js/scripts.js"></script>
       <div class="container">

@@ -3,6 +3,7 @@ var Highcharts;
 var pageSize = window.pageSize;
 var maxPages = window.maxPages;
 var historyCollection = window.updateHistory;
+var currentRate = window.currentRate;
 console.log("History:", historyCollection);
 var currentPage = 1;
 var totalPages = Math.ceil(historyCollection.length / pageSize);
@@ -139,8 +140,15 @@ function handlePrevPage() {
         handlePageChange(currentPage - halfPage * 2);
     }
 }
-function convertToChartSeries(history) {
+function convertToChartSeries(history, currentRate) {
     var series = [];
+    //create a date object for the current entry
+    for (var j = 0; j < currentRate.rates.length; j++) {
+        if (currentRate.rates[j].currency == "USD") {
+            series.push([Date.now(), currentRate.rates[j].rate]);
+            break;
+        }
+    }
     for (var i = 0; i < history.length; i++) {
         for (var j = 0; j < history[i].value.rates.length; j++) {
             if (history[i].value.rates[j].currency == "USD") {
@@ -155,7 +163,7 @@ $(document).ready(function () {
     $('body').bootstrapMaterialDesign();
     $('[data-toggle="tooltip"]').tooltip();
     handlePageChange(1);
-    var chartSeries = convertToChartSeries(historyCollection);
+    var chartSeries = convertToChartSeries(historyCollection, currentRate);
     Highcharts.chart('chart-container', {
         chart: {
             zoomType: 'x'

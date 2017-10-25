@@ -4,6 +4,7 @@ let Highcharts: any;
 let pageSize = (<any>window).pageSize;
 let maxPages = (<any>window).maxPages;
 let historyCollection = (<any>window).updateHistory;
+let currentRate = (<any>window).currentRate;
 console.log("History:", historyCollection);
 let currentPage = 1;
 let totalPages = Math.ceil(historyCollection.length / pageSize);
@@ -154,8 +155,17 @@ function handlePrevPage() {
   }
 }
 
-function convertToChartSeries(history) {
+function convertToChartSeries(history, currentRate) {
   let series = [];
+
+  //create a date object for the current entry
+  for(let j = 0; j < currentRate.rates.length; j ++) { //go thru each rate
+    if(currentRate.rates[j].currency == "USD") {
+      series.push([ Date.now(), currentRate.rates[j].rate ]);
+      break;
+    }
+  }
+
 
   for(let i = 0; i < history.length; i ++) { //go thru each history entry
     for(let j = 0; j < history[i].value.rates.length; j ++) { //go thru each rate
@@ -174,7 +184,7 @@ $(document).ready(function() {
   (<any>$('[data-toggle="tooltip"]')).tooltip();
   handlePageChange(1);
 
-  let chartSeries = convertToChartSeries(historyCollection);
+  let chartSeries = convertToChartSeries(historyCollection, currentRate);
 
   Highcharts.chart('chart-container', {
     chart: {
