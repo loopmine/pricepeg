@@ -157,7 +157,7 @@ function convertToChartSeries(history, currentRate) {
             }
         }
     }
-    return series;
+    return series.reverse(); //fixes highchart error #15
 }
 $(document).ready(function () {
     $('body').bootstrapMaterialDesign();
