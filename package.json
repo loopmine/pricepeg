@@ -6,8 +6,7 @@
   "scripts": {
     "build": "rm -rf dist && tsc && cp -R ./src/static/ ./dist/static/",
     "test": "mocha ./dist/test",
-    "start": "node dist/server $CONFIG",
-    "startd": "pm2 start node dist/server.js $CONFIG --name \"sys-peg-server\""
+    "start": "node dist/server $CONFIG"
   },
   "repository": {
     "type": "git",
@@ -41,7 +40,7 @@
     "mocha": "^3.2.0",
     "rewire": "^2.5.1",
     "sinon": "^1.17.3",
-    "typescript": "^2.1.4",
+    "typescript": "^2.5.3",
     "when": "^3.7.7"
   }
 }

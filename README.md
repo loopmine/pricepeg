@@ -31,7 +31,7 @@ The Price Peg Server must be run as a daemon. There are two optons for this:
 * **(Recommended)** Install [pm2](https://www.npmjs.com/package/pm2) for better running and monitoring of the server in daemon mode.
 	1.	Install [pm2](https://www.npmjs.com/package/pm2) globall using `sudo npm install -g pm2`.
 	2. Ensure pm2 is updated- `pm2 update`.
-	3. Change to the Syscoin Price Peg Server directory using `cd pricepeg`. Run the server in daemon mode using `npm run startd`.
+	3. Change to the Syscoin Price Peg Server directory using `cd pricepeg`. Run the server in daemon mode using `pm2 start dist/server.js $CONFIG --name "pegserver"` (may need permission).
 	4. (Optional) You can now use pm2's tooling for insights on how many resources the Peg Server is using and even launch it in multiprocess or clustered mode.
 * If you use the [screen](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-screen-on-an-ubuntu-cloud-server) application you can start the server by simply running `screen npm run start`. *Make sure to detach from the screen without terminating it!*
 
