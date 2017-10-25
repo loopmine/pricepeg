@@ -5,3 +5,14 @@
 .table-row {
   white-space: nowrap;
 }
+
+.main-footer {
+  text-align: center;
+  opacity: 0.5;
+  padding: 5px;
+  color: gray;
+}
+
+.main-footer:hover {
+  opacity: 1;
+}

@@ -41,7 +41,7 @@ export const defaultConfig: PegConfig = {
   debugLogFilename: "peg.log",
   updateLogFilename: "peg-update-history.log",
 
-  version: "1.3.2"
+  version: "1.4.0"
 };
 
 let config = defaultConfig;

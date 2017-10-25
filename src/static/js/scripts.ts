@@ -42,11 +42,14 @@ const timeConverter = (UNIX_timestamp) => {
 };
 
 function getPage(num) {
+  //use reverse-order
+  let reverseHistory = historyCollection.reverse();
   let startIndex = pageSize * (num-1);
   let endIndex = pageSize * num;
   console.log("getPage ", startIndex, endIndex);
-  let page = historyCollection.slice(startIndex, endIndex);
+  let page = reverseHistory.slice(startIndex, endIndex);
   let markup = "";
+
   for(let i = 0; i < page.length; i ++) {
     markup += '<tr>';
     markup += '<th scope="row" class="table-row">' + timeConverter(historyCollection[i].date) + '</th>';

@@ -28,7 +28,7 @@ exports.defaultConfig = {
     logLevel: logLevel,
     debugLogFilename: "peg.log",
     updateLogFilename: "peg-update-history.log",
-    version: "1.3.2"
+    version: "1.4.0"
 };
 var config = exports.defaultConfig;
 //should always use the below functions for accessing config.

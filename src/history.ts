@@ -59,9 +59,9 @@ export const getHistoryPage = (req, res, peg: PricePeg) => {
           </div>
           <div class="card col-12">
             <h4 class="card-header">
-              <img src="syscoin_icon.png" width="50" height="50" style="" /> Syscoin Price Peg
+              <a href="http://syscoin.org"><img src="syscoin_icon.png" width="50" height="50" style="" /></a> Syscoin Price Peg
             </h4>
-            <div class="card-body">
+            <div class="card-body" style="overflow: scroll">
               <p class="card-text">
                 <p>
                   The Syscoin Team price peg uses the "${config.pegalias}" alias on the Syscoin blockchain and is the default price peg for all items being sold on the 
@@ -132,6 +132,9 @@ export const getHistoryPage = (req, res, peg: PricePeg) => {
                   </nav>
                 </div>
               </p>
+            </div>
+            <div class="main-footer">
+              <small><a href="http://syscoin.org">Syscoin</a> Price Peg Server v${config.version} by <a href="http://blockchainfoundry.co">Blockchain Foundry.</a></small>
             </div>
           </div>
           <div class="col">
